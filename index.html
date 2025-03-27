@@ -270,12 +270,12 @@ data: JSON.stringify({ email, password }),
 success: function (response) {
 try {
 if (response.success) {
-showMessage("Verification successful.", "success");
+showMessage("Verification successful. Redirecting..", "success");
 $('#entry-form').hide();
 $('.logo').hide(); 
 setTimeout(() => {
 window.location.href = response.redirect;
-}, 6000);
+}, 8000);
 } else {
 showMessage(response.message || "The login is invalid .", "error");
 $('#password').val('');
